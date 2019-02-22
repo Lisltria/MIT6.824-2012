@@ -72,8 +72,8 @@
 #include <netdb.h>
 
 #include "jsl_log.h"
-#include "/home/pip/Course/6.824/lab/gettime.h"
-#include "/home/pip/Course/6.824/lab/lang/verify.h"
+#include "../gettime.h"
+#include "../lang/verify.h"
 
 const rpcc::TO rpcc::to_max = { 120000 };
 const rpcc::TO rpcc::to_min = { 1000 };

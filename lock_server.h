@@ -7,7 +7,7 @@
 #include <string>
 #include "lock_protocol.h"
 #include "lock_client.h"
-#include "rpc.h"
+#include "rpc/rpc.h"
 
 class lock_server {
 

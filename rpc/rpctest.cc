@@ -8,9 +8,9 @@
 #include <string.h>
 #include <getopt.h>
 #include "jsl_log.h"
-#include "gettime.h"
-#include "lang/verify.h"
-
+#include "../gettime.h"
+#include "../lang/verify.h"
+#include <unistd.h>
 #define NUM_CL 2
 
 rpcs *server;  // server rpc object
@@ -429,6 +429,7 @@ main(int argc, char *argv[])
 	if (debug_level > 0) {
 		//__loginit.initNow();
 		jsl_set_debug(debug_level);
+	
 		jsl_log(JSL_DBG_1, "DEBUG LEVEL: %d\n", debug_level);
 	}
 
