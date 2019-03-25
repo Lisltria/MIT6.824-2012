@@ -662,9 +662,43 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 		unsigned int xid_rep, char **b, int *sz)
 {
 	ScopedLock rwl(&reply_window_m_);
-
-        // You fill this in for Lab 1.
-	return NEW;
+	rpcstate_t ret = NEW;
+	decltype (reply_window_[0] ) replylist = reply_window_[clt_nonce];
+	auto it = replylist.begin();
+	if ( !replylist.empty() && replylist.front().xid > xid ) {
+		ret = FORGOTTEN;
+	}
+	else {
+		for (; it != replylist.end(); it++) {
+			if( it->xid == xid ) {
+				if( it->cb_present ) {
+					ret = DONE;
+					*b = it->buf;
+					*sz = it->sz;
+				}
+				else {
+					ret = INPROGRESS;
+				}
+				break;
+			}
+			else if( it->xid > xid ) {
+				ret = NEW;
+				replylist.insert(it,reply_t(xid));
+				break;
+			}
+		}
+		if( ret == NEW && it == replylist.end() ) {
+			replylist.push_back(reply_t(xid));
+		}
+	}
+	while ( !replylist.empty() && replylist.front().xid < xid_rep ) {
+		free( replylist.front().buf);
+		replylist.pop_front();
+	}
+	if ( replylist.empty() ||replylist.front().xid > xid_rep ) {
+		replylist.push_front( reply_t(xid_rep) );
+	}
+	return ret;
 }
 
 // rpcs::dispatch calls add_reply when it is sending a reply to an RPC,
@@ -677,6 +711,17 @@ rpcs::add_reply(unsigned int clt_nonce, unsigned int xid,
 		char *b, int sz)
 {
 	ScopedLock rwl(&reply_window_m_);
+	decltype(reply_window_[0]) replylist = reply_window_[clt_nonce];
+	auto it = replylist.begin();
+	for(; it != replylist.end(); it++) {
+		if ( it->xid == xid ) {
+			break;
+		}
+	}
+	VERIFY( it != replylist.end() );
+	it->buf = b;
+	it->sz = sz;
+	it->cb_present = true;	
         // You fill this in for Lab 1.
 }
 
