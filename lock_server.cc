@@ -56,20 +56,27 @@ bool locks_lid::findlid_(lock_protocol::lockid_t lid) {
 }	
 
 void locks_lid::locks_(lock_protocol::lockid_t lid) {
-	std::unique_lock<std::mutex> lk(mutex_);
+	//std::unique_lock<std::mutex> lk(mutex_);
+	pthread_mutex_lock( &mutex_ );
 	if (findlid_(lid) ) {
 		table[lid] = LOCKED;
 	}
 	else {
-		condvar.wait(lk,[&](){return table[lid] == FREE;} );
+		//condvar.wait(lk,[&](){return table[lid] == FREE;} );
+		auto flamda = [&](){return table[lid] == FREE;}; 
+		while(!flamda() ) pthread_cond_wait( &condvar, &mutex_ );
 		table[lid] = LOCKED;
 	}
+	pthread_mutex_unlock( &mutex_ );
 }
 
 void locks_lid::unlocks_(lock_protocol::lockid_t lid) {
-	std::unique_lock<std::mutex> lk(mutex_);
+	//std::unique_lock<std::mutex> lk(mutex_);
+	pthread_mutex_lock( &mutex_ );
 	if(!findlid_(lid)) {
 		table[lid] = FREE;
 	}
-	condvar.notify_all();
+	//condvar.notify_all();
+	pthread_cond_broadcast( &condvar );
+	pthread_mutex_unlock( &mutex_ );
 }	
