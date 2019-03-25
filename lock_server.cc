@@ -17,7 +17,59 @@ lock_server::stat(int clt, lock_protocol::lockid_t lid, int &r)
   lock_protocol::status ret = lock_protocol::OK;
   printf("stat request from clt %d\n", clt);
   r = nacquire;
+ /* if ( locks_for_lid.findlid(lid) ) {
+	  ret = lock_protocol::OK;
+  }
+  else {
+	  ret = lock_protocol::RETRY;
+  }*/
   return ret;
 }
 
+lock_protocol::status
+lock_server::acquire(int clt, lock_protocol::lockid_t lid, int &r) {
+	printf("acquire request from clt %d\n",clt);
+	r = nacquire;
+	lk_.locks_(lid);
+	return lock_protocol::OK;
+}
 
+lock_protocol::status
+lock_server::release(int clt, lock_protocol::lockid_t lid, int &r) {
+	printf("release request from clt %d\n",clt);
+	r = nacquire;
+	lk_.unlocks_(lid);
+	return lock_protocol::OK;
+}
+
+bool locks_lid::findlid_(lock_protocol::lockid_t lid) {
+	if ( table.find(lid) == table.end() ) {
+		table[lid] = FREE;
+	   return true;
+	}
+	else if( table[lid] == LOCKED ) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}	
+
+void locks_lid::locks_(lock_protocol::lockid_t lid) {
+	std::unique_lock<std::mutex> lk(mutex_);
+	if (findlid_(lid) ) {
+		table[lid] = LOCKED;
+	}
+	else {
+		condvar.wait(lk,[&](){return table[lid] == FREE;} );
+		table[lid] = LOCKED;
+	}
+}
+
+void locks_lid::unlocks_(lock_protocol::lockid_t lid) {
+	std::unique_lock<std::mutex> lk(mutex_);
+	if(!findlid_(lid)) {
+		table[lid] = FREE;
+	}
+	condvar.notify_all();
+}	
