@@ -9,9 +9,7 @@
 #include "lock_client.h"
 #include "rpc/rpc.h"
 #include <map>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include <pthread.h>
 
 class locks_lid {
 	enum stat{
@@ -19,9 +17,14 @@ class locks_lid {
 		FREE
 	};
 	std::map<lock_protocol::lockid_t , stat> table;
-	std::mutex mutex_;
-	std::condition_variable condvar;
+	//std::mutex mutex_;
+	//std::condition_variable condvar;
+	pthread_mutex_t mutex_;
+	pthread_cond_t condvar;
 public:
+	locks_lid(): mutex_(PTHREAD_MUTEX_INITIALIZER),
+				 condvar(PTHREAD_COND_INITIALIZER) 
+				 {}
 	void locks_(lock_protocol::lockid_t lid);
 	void unlocks_(lock_protocol::lockid_t lid);
 	bool findlid_(lock_protocol::lockid_t lid);
