@@ -1,10 +1,11 @@
-#include "rpc.h"
+#include "rpc/rpc.h"
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "lock_server.h"
+#include <unistd.h>
 
-#include "jsl_log.h"
+#include "rpc/jsl_log.h"
 
 // Main loop of lock_server
 
@@ -34,6 +35,9 @@ main(int argc, char *argv[])
   lock_server ls;
   rpcs server(atoi(argv[1]), count);
   server.reg(lock_protocol::stat, &ls, &lock_server::stat);
+  server.reg(lock_protocol::acquire, &ls, &lock_server::acquire);
+  server.reg(lock_protocol::release, &ls, &lock_server::release);
+
 #endif
 
 

@@ -65,14 +65,15 @@
 #include "slock.h"
 
 #include <sys/types.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <time.h>
 #include <netdb.h>
 
 #include "jsl_log.h"
-#include "gettime.h"
-#include "lang/verify.h"
+#include "../gettime.h"
+#include "../lang/verify.h"
 
 const rpcc::TO rpcc::to_max = { 120000 };
 const rpcc::TO rpcc::to_min = { 1000 };
@@ -228,19 +229,19 @@ rpcc::call1(unsigned int proc, marshall &req, unmarshall &rep,
 		if(transmit){
 			get_refconn(&ch);
 			if(ch){
-			        if(reachable_) {
-                                        request forgot;
-                                        {
-                                                ScopedLock ml(&m_);
-                                                if (dup_req_.isvalid() && xid_rep_done_ > dup_req_.xid) {
-                                                        forgot = dup_req_;
-                                                        dup_req_.clear();
-                                                }
-                                        }
-                                        if (forgot.isvalid()) 
-                                                ch->send((char *)forgot.buf.c_str(), forgot.buf.size());
-                                        ch->send(req.cstr(), req.size());
-                                }
+				if(reachable_) {
+						request forgot;
+						{
+							ScopedLock ml(&m_);
+                            if (dup_req_.isvalid() && xid_rep_done_ > dup_req_.xid) {
+                            	forgot = dup_req_;
+								dup_req_.clear();
+							}
+                        }
+                        if (forgot.isvalid()) 
+                        	ch->send((char *)forgot.buf.c_str(), forgot.buf.size());
+                        ch->send(req.cstr(), req.size());
+                }
 				else jsl_log(JSL_DBG_1, "not reachable\n");
 				jsl_log(JSL_DBG_2, 
 						"rpcc::call1 %u just sent req proc %x xid %u clt_nonce %d\n", 
